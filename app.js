@@ -11,7 +11,6 @@ const els = {
   postalCode: document.getElementById("postalCode"),
   slots: document.getElementById("slots"),
   pallets: document.getElementById("pallets"),
-  messageBox: document.getElementById("messageBox"),
   fatalError: document.getElementById("fatalError"),
   summaryBox: document.getElementById("summaryBox"),
   summaryPostal: document.getElementById("summaryPostal"),
@@ -28,8 +27,8 @@ const els = {
 
 document.addEventListener("DOMContentLoaded", () => {
   setupTransportToggle();
-  els.slots.addEventListener("input", syncDerivedFields);
-  syncDerivedFields();
+  els.slots.addEventListener("input", syncDerivedFieldsFromSlots);
+  syncDerivedFieldsFromSlots();
 
   loadAllData().then(() => {
     state.initialized = true;
@@ -50,22 +49,25 @@ function setupTransportToggle() {
 
       if (getTransportType() === "FTL") {
         els.slots.value = "34";
-        els.slots.readOnly = true;
-      } else {
-        els.slots.readOnly = false;
-        if (!els.slots.value || Number(els.slots.value) === 34) {
-          els.slots.value = "1";
+        if (!els.pallets.value || Number(els.pallets.value) === 1 || Number(els.pallets.value) === Number(els.slots.dataset.lastAutoValue || 1)) {
+          els.pallets.value = "34";
         }
       }
-      syncDerivedFields();
+
+      syncDerivedFieldsFromSlots();
     });
   });
 }
 
-function syncDerivedFields() {
+function syncDerivedFieldsFromSlots() {
   const slots = Number(els.slots.value);
   const pallets = calculatePalletsFromSlots(slots);
-  els.pallets.value = Number.isFinite(pallets) ? String(pallets) : "";
+  els.slots.dataset.lastAutoValue = Number.isFinite(pallets) ? String(pallets) : "";
+  if (!els.pallets.matches(":focus") && (els.pallets.value === "" || els.pallets.value === "1" || els.pallets.value === els.pallets.dataset.lastAutoValueOld || Number(els.pallets.value) === Number(els.slots.dataset.previousAutoValue || 1))) {
+    els.pallets.value = Number.isFinite(pallets) ? String(pallets) : "";
+  }
+  els.pallets.dataset.lastAutoValueOld = Number.isFinite(pallets) ? String(pallets) : "";
+  els.slots.dataset.previousAutoValue = Number.isFinite(pallets) ? String(pallets) : "";
 }
 
 async function loadAllData() {
@@ -145,8 +147,6 @@ function parseRatesCsv(text) {
     });
     return {
       forwarder: (row["Forwarder"] || "").trim(),
-      originCountry: (row["Origin CTRY"] || "").trim(),
-      destCountry: (row["Dest CTRY"] || "").trim(),
       chgFrom: parseGermanNumber(row["CHG from"]),
       chgTo: parseGermanNumber(row["CHG to"]),
       unit: ((row["Unit"] || "").trim().toUpperCase()),
@@ -158,8 +158,6 @@ function parseRatesCsv(text) {
 function parseZonesCsv(text) {
   return parseSemicolonCsv(text).map((row) => ({
     forwarder: (row["Forwarder"] || "").trim(),
-    originCountry: (row["Origin CTRY"] || "").trim(),
-    destCountry: (row["Dest CTRY"] || "").trim(),
     destFromRaw: (row["Dest From"] || "").trim(),
     destToRaw: (row["Dest To"] || "").trim(),
     zone: String(row["Zone"] || "").trim()
@@ -218,18 +216,6 @@ function getTransportType() {
   return els.transportInputs.find(input => input.checked)?.value || "Teilladung";
 }
 
-function showMessage(type, text) {
-  els.messageBox.className = `notice ${type}`;
-  els.messageBox.textContent = text;
-  els.messageBox.style.display = "block";
-}
-
-function hideMessage() {
-  els.messageBox.style.display = "none";
-  els.messageBox.textContent = "";
-  els.messageBox.className = "notice";
-}
-
 function showFatal(text) {
   els.fatalError.textContent = text;
   els.fatalError.style.display = "block";
@@ -242,43 +228,35 @@ function clearFatal() {
 
 function onReset() {
   setTimeout(() => {
-    hideMessage();
     clearFatal();
     els.summaryBox.style.display = "none";
     els.resultsSection.style.display = "none";
-    els.resultsBody.innerHTML = `<tr><td colspan="9" class="muted">Noch keine Berechnung.</td></tr>`;
+    els.resultsBody.innerHTML = `<tr><td colspan="7" class="muted">Noch keine Berechnung.</td></tr>`;
     els.transportInputs.forEach(input => { input.checked = input.value === "Teilladung"; });
     els.transportOptions.forEach(option => { option.classList.toggle("active", option.querySelector("input").checked); });
-    els.slots.readOnly = false;
     els.slots.value = "1";
-    syncDerivedFields();
+    els.pallets.value = "1";
+    syncDerivedFieldsFromSlots();
   }, 0);
 }
 
 async function onSubmit(event) {
   event.preventDefault();
   if (!state.initialized) {
-    showMessage("danger", "Die Daten werden noch geladen. Bitte kurz erneut versuchen.");
     return;
   }
 
-  hideMessage();
   clearFatal();
 
   const postalCodeRaw = els.postalCode.value.trim();
   const postalCode = normalizePostalCode(postalCodeRaw);
   const slots = Number(els.slots.value);
-  const pallets = calculatePalletsFromSlots(slots);
+  const pallets = Number(els.pallets.value);
   const transportType = getTransportType();
 
-  if (!postalCode) {
-    showMessage("danger", "Bitte eine PLZ eingeben.");
-    return;
-  }
-  if (!Number.isFinite(slots) || slots <= 0) {
-    showMessage("danger", "Bitte eine gültige Stellplatzanzahl eingeben.");
-    return;
-  }
+  if (!postalCode) return;
+  if (!Number.isFinite(slots) || slots <= 0) return;
+  if (!Number.isFinite(pallets) || pallets <= 0) return;
 
   const calculations = calculateAll(postalCode, slots, pallets);
   if (!calculations.results.length) {
@@ -286,7 +264,7 @@ async function onSubmit(event) {
     const reason = zoneExistsAnywhere
       ? `Für die PLZ ${postalCodeRaw} wurde kein passender Tarif gefunden.`
       : `Keine Zone gefunden. Für die PLZ ${postalCodeRaw} liegt aktuell keine Zuordnung vor.`;
-    showMessage("danger", reason);
+    showFatal(reason);
     els.summaryBox.style.display = "none";
     els.resultsSection.style.display = "none";
     return;
@@ -302,7 +280,6 @@ async function onSubmit(event) {
   });
 
   renderResults(calculations.results);
-  showMessage("success", `Berechnung erfolgreich. ${calculations.results.length} Dienstleister gefunden, ${calculations.missingCount} ohne Ergebnis.`);
 }
 
 function calculateAll(postalCode, slots, pallets) {
@@ -334,14 +311,10 @@ function calculateAll(postalCode, slots, pallets) {
       if (!Number.isFinite(rawZonePrice) || rawZonePrice >= 90000) return;
 
       let basePrice = rawZonePrice;
-      let pricingReason = rate.unit || "Tarif";
-
       if (rate.unit === "PLL") {
         basePrice = rawZonePrice * slots;
-        pricingReason = "PLL × Stellplätze";
       } else if (rate.unit === "SHP") {
         basePrice = rawZonePrice;
-        pricingReason = "SHP";
       }
 
       const floaterRate = state.floater[normalizeName(forwarder)] || 0;
@@ -352,13 +325,11 @@ function calculateAll(postalCode, slots, pallets) {
       viable.push({
         forwarder,
         zone: zoneInfo.zone,
-        tariffBand: `${formatBand(rate.chgFrom)} – ${formatBand(rate.chgTo)} ${rate.unit || ""}`.trim(),
         basePrice,
         floaterRate,
         floaterEuro,
         ancillaryCharge,
-        totalPrice,
-        reason: pricingReason
+        totalPrice
       });
     });
 
@@ -386,11 +357,6 @@ function calculateAncillary(forwarder, pallets) {
 function calculatePalletsFromSlots(slots) {
   if (!Number.isFinite(slots) || slots <= 0) return NaN;
   return Math.ceil(slots);
-}
-
-function formatBand(value) {
-  if (!Number.isFinite(value)) return "—";
-  return new Intl.NumberFormat("de-DE", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(value);
 }
 
 function findZoneForForwarder(forwarder, postalCode) {
@@ -444,13 +410,11 @@ function renderResults(results) {
     tr.innerHTML = `
       <td>${providerCell}</td>
       <td>${escapeHtml(row.zone)}</td>
-      <td>${escapeHtml(row.tariffBand)}</td>
       <td class="right">${formatMoney(row.basePrice)}</td>
       <td class="right">${formatPercent(row.floaterRate)}</td>
       <td class="right">${formatMoney(row.floaterEuro)}</td>
       <td class="right">${formatMoney(row.ancillaryCharge)}</td>
       <td class="right total-price">${formatMoney(row.totalPrice)}</td>
-      <td>${escapeHtml(row.reason)}</td>
     `;
     els.resultsBody.appendChild(tr);
   });

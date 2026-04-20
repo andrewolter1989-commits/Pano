@@ -30,7 +30,7 @@
 
           <div class="field">
             <label for="pallets">Paletten</label>
-            <input id="pallets" type="number" value="1" readonly />
+            <input id="pallets" type="number" min="1" step="1" value="1" />
           </div>
 
           <fieldset class="transport-field">
@@ -53,8 +53,6 @@
           <button class="secondary" type="reset">Zurücksetzen</button>
         </div>
 
-        <div id="messageBox" class="notice"></div>
-
         <section id="summaryBox" class="summary-box" style="display:none;">
           <div class="summary-left">
             <div class="summary-row"><strong>PLZ:</strong> <span id="summaryPostal">—</span></div>
@@ -74,7 +72,6 @@
     <section id="resultsSection" class="card results-shell" style="display:none;">
       <div class="results-head">
         <h2>Preise aller Dienstleister</h2>
-        <p class="muted">Sortiert nach Gesamtpreis, günstigster Anbieter ganz oben. Platzhalterpreise wie 99.999,00 € werden ausgeblendet.</p>
       </div>
 
       <div class="table-wrap">
@@ -83,18 +80,16 @@
             <tr>
               <th>Dienstleister</th>
               <th>Zone</th>
-              <th>Tarifband</th>
               <th class="right">Basis (€)</th>
               <th class="right">Floater (%)</th>
               <th class="right">Floater (€)</th>
               <th class="right">Palettentausch (€)</th>
               <th class="right">Preis (€)</th>
-              <th>Grund</th>
             </tr>
           </thead>
           <tbody id="resultsBody">
             <tr>
-              <td colspan="9" class="muted">Noch keine Berechnung.</td>
+              <td colspan="7" class="muted">Noch keine Berechnung.</td>
             </tr>
           </tbody>
         </table>
