@@ -1,1 +1,27 @@
-{"DHL": {"enabled": true, "mode": "per_psp", "value": 5}, "DB": {"enabled": true, "mode": "fixed", "value": 20}}
+{
+  "17111": {
+    "enabled": true,
+    "mode": "per_psp",
+    "value": 0
+  },
+  "Hellmann": {
+    "enabled": true,
+    "mode": "per_psp",
+    "value": 0
+  },
+  "Mordhorst": {
+    "enabled": true,
+    "mode": "per_psp",
+    "value": 0
+  },
+  "Raben": {
+    "enabled": true,
+    "mode": "per_psp",
+    "value": 0
+  },
+  "Voigt": {
+    "enabled": true,
+    "mode": "per_psp",
+    "value": 0
+  }
+}

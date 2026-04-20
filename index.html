@@ -1,78 +1,96 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Preisrechner</title>
+  <title>Pano Preisrechner</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <main class="page">
-    <div class="brand">TROCELLEN</div>
-    <h1>Preisrechner</h1>
+  <main class="app-shell">
+    <header class="hero-header">
+      <p class="eyebrow">Pano</p>
+      <h1>Preisrechner</h1>
+    </header>
 
-    <section class="panel form-panel">
-      <div class="form-grid">
-        <div class="field-group field-plz">
-          <label for="plz">PLZ Empfänger</label>
-          <input id="plz" type="text" placeholder="z. B. 24939" autocomplete="off" />
-        </div>
+    <div id="fatalError" class="notice danger"></div>
 
-        <div class="field-group field-pallets">
-          <label for="psp">Paletten</label>
-          <input id="psp" type="number" min="1" value="1" />
-        </div>
-
-        <div class="transport-card">
-          <div class="transport-title">Transportart</div>
-          <div class="transport-buttons">
-            <button type="button" class="transport-btn active" data-mode="teilladung">Teilladung</button>
-            <button type="button" class="transport-btn" data-mode="ftl">FTL</button>
+    <section class="card calculator-shell">
+      <form id="calculatorForm" class="calculator-form">
+        <div class="form-grid form-grid-top">
+          <div class="field">
+            <label for="postalCode">PLZ Empfänger</label>
+            <input id="postalCode" type="text" inputmode="text" placeholder="z. B. 27777" />
           </div>
-        </div>
-      </div>
 
-      <div class="actions">
-        <button id="calculateBtn" class="primary-btn" type="button">Berechnen</button>
-        <button id="resetBtn" class="secondary-btn" type="button">Zurücksetzen</button>
-      </div>
+          <div class="field">
+            <label for="pallets">Paletten</label>
+            <input id="pallets" type="number" min="1" step="1" value="1" />
+          </div>
 
-      <div id="message" class="message hidden"></div>
+          <fieldset class="transport-field">
+            <legend>Transportart</legend>
+            <div class="transport-switch">
+              <label class="transport-option active" data-transport="teil">
+                <input type="radio" name="transportType" value="Teilladung" checked />
+                <span>Teilladung</span>
+              </label>
+              <label class="transport-option" data-transport="ftl">
+                <input type="radio" name="transportType" value="FTL" />
+                <span>FTL</span>
+              </label>
+            </div>
+          </fieldset>
+        </div>
 
-      <div id="summary" class="summary-card hidden">
-        <div class="summary-left">
-          <div><strong>PLZ:</strong> <span id="summaryPlz">—</span></div>
-          <div><strong>Transport:</strong> <span id="summaryTransport">Teilladung</span></div>
-          <div><strong>Paletten:</strong> <span id="summaryPallets">—</span></div>
-          <div><strong>Dienstleister mit Ergebnis:</strong> <span id="summaryCount">0</span></div>
+        <div class="form-actions">
+          <button class="primary" type="submit">Berechnen</button>
+          <button class="secondary" type="reset">Zurücksetzen</button>
         </div>
-        <div class="summary-right">
-          <div class="summary-kicker">Günstigster Anbieter</div>
-          <div id="summaryBest" class="summary-best">—</div>
-        </div>
-      </div>
+
+        <div id="messageBox" class="notice"></div>
+
+        <section id="summaryBox" class="summary-box" style="display:none;">
+          <div class="summary-left">
+            <div class="summary-row"><strong>PLZ:</strong> <span id="summaryPostal">—</span></div>
+            <div class="summary-row"><strong>Paletten:</strong> <span id="summaryPallets">—</span></div>
+            <div class="summary-row"><strong>Transportart:</strong> <span id="summaryTransport">—</span></div>
+            <div class="summary-row"><strong>Dienstleister mit Ergebnis:</strong> <span id="summaryCount">—</span></div>
+          </div>
+          <div class="summary-right">
+            <div class="summary-best-label">Günstigster Anbieter</div>
+            <div class="summary-best" id="summaryBest">—</div>
+          </div>
+        </section>
+      </form>
     </section>
 
-    <section id="resultsSection" class="panel results-panel hidden">
-      <h2>Preise aller Dienstleister</h2>
-      <p class="results-subtitle">
-        Sortiert nach Gesamtpreis, günstigster Anbieter ganz oben. Platzhalterpreise wie 99.999,00 € werden ausgeblendet.
-      </p>
+    <section id="resultsSection" class="card results-shell" style="display:none;">
+      <div class="results-head">
+        <h2>Preise aller Dienstleister</h2>
+        <p class="muted">Sortiert nach Gesamtpreis, günstigster Anbieter ganz oben. Platzhalterpreise wie 99.999,00 € werden ausgeblendet.</p>
+      </div>
 
       <div class="table-wrap">
-        <table>
+        <table class="price-table">
           <thead>
             <tr>
               <th>Dienstleister</th>
               <th>Zone</th>
-              <th>Basis (€)</th>
-              <th>Diesel (%)</th>
-              <th>Diesel (€)</th>
-              <th>Palettentausch (€)</th>
-              <th>Preis (€)</th>
+              <th>Tarifband</th>
+              <th class="right">Basis (€)</th>
+              <th class="right">Floater (%)</th>
+              <th class="right">Floater (€)</th>
+              <th class="right">Palettentausch (€)</th>
+              <th class="right">Preis (€)</th>
+              <th>Grund</th>
             </tr>
           </thead>
-          <tbody id="resultsBody"></tbody>
+          <tbody id="resultsBody">
+            <tr>
+              <td colspan="9" class="muted">Noch keine Berechnung.</td>
+            </tr>
+          </tbody>
         </table>
       </div>
     </section>
