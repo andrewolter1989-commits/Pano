@@ -1,116 +1,37 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Preisrechner Palettensendungen</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<title>Preisrechner</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="page">
-    <header class="hero">
-      <div>
-        <p class="eyebrow">Frontend-only · CSV/JSON im Browser</p>
-        <h1>Preisrechner für Palettensendungen</h1>
-        <p class="intro">
-          1 fixer Absender, 1 Empfänger, kein Mehrstopp, keine Baustellenlogik.
-          Berechnung über Zone, Tarif, Diesel und dienstleisterspezifische Nebenkosten.
-        </p>
-      </div>
-    </header>
 
-    <section class="card form-card">
-      <form id="calculatorForm" novalidate>
-        <div class="grid">
-          <label class="field">
-            <span>Land</span>
-            <select id="destCountry" required>
-              <option value="">Bitte wählen</option>
-            </select>
-          </label>
+<div class="card">
+  <h2>Preisrechner</h2>
 
-          <label class="field">
-            <span>PLZ Empfänger</span>
-            <input id="postalCode" type="text" autocomplete="off" placeholder="z. B. 24939" required />
-          </label>
+  <div class="form-row">
+    <div>
+      <label>PLZ Empfänger</label>
+      <input id="plz" type="text" placeholder="z. B. 27777" />
+    </div>
 
-          <label class="field">
-            <span>Palettenstellplätze (PSP)</span>
-            <input id="psp" type="number" min="1" step="1" placeholder="z. B. 6" required />
-          </label>
+    <div>
+      <label>Paletten</label>
+      <input id="psp" type="number" min="1" value="1" />
+    </div>
+  </div>
 
-          <label class="field">
-            <span>Dienstleister</span>
-            <select id="forwarderSelect">
-              <option value="__all__">Alle berechnen</option>
-            </select>
-          </label>
-        </div>
+  <div class="actions">
+    <button onclick="calculate()">Berechnen</button>
+    <button class="secondary" onclick="resetForm()">Zurücksetzen</button>
+  </div>
 
-        <div class="options-row">
-          <label class="checkline">
-            <input id="exchangeToggle" type="checkbox" checked />
-            <span>Palettentausch berücksichtigen</span>
-          </label>
-        </div>
+  <div id="error" class="error"></div>
 
-        <div class="actions">
-          <button type="submit" class="btn primary">Berechnen</button>
-          <button type="reset" class="btn">Zurücksetzen</button>
-        </div>
+  <div id="results" class="results"></div>
+</div>
 
-        <div id="messageBox" class="notice" hidden></div>
-      </form>
-    </section>
-
-    <section id="summaryBox" class="card summary" hidden>
-      <div><span>Land</span><strong id="summaryCountry">—</strong></div>
-      <div><span>PLZ</span><strong id="summaryPostal">—</strong></div>
-      <div><span>PSP</span><strong id="summaryPsp">—</strong></div>
-      <div><span>Treffer</span><strong id="summaryCount">—</strong></div>
-      <div class="summary-best"><span>Günstigster</span><strong id="summaryBest">—</strong></div>
-    </section>
-
-    <section id="resultsSection" class="card" hidden>
-      <div class="section-head">
-        <h2>Ergebnisse</h2>
-        <p>Sortiert nach günstigstem Gesamtpreis.</p>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Dienstleister</th>
-              <th>Zone</th>
-              <th class="right">Basispreis</th>
-              <th class="right">Diesel</th>
-              <th class="right">Palettentausch</th>
-              <th class="right">Gesamtpreis</th>
-              <th>Hinweis</th>
-            </tr>
-          </thead>
-          <tbody id="resultsBody">
-            <tr>
-              <td colspan="7" class="muted">Noch keine Berechnung.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="card help-card">
-      <details>
-        <summary>Dateien & erwartete Struktur</summary>
-        <ul>
-          <li><code>zones.csv</code>: Forwarder, optional Origin/Dest CTRY, Dest From, Dest To, Zone</li>
-          <li><code>rates.csv</code>: Forwarder, optional Origin/Dest CTRY, CHG from, CHG to, Unit, Zone 1…n</li>
-          <li><code>floater.json</code>: Prozentwerte je Dienstleister</li>
-          <li><code>ancillary.json</code>: Nebenkosten je Dienstleister, z. B. Palettentausch</li>
-        </ul>
-      </details>
-    </section>
-  </main>
-
-  <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
