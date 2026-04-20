@@ -9,11 +9,13 @@ const state = {
 const els = {
   form: document.getElementById("calculatorForm"),
   postalCode: document.getElementById("postalCode"),
+  slots: document.getElementById("slots"),
   pallets: document.getElementById("pallets"),
   messageBox: document.getElementById("messageBox"),
   fatalError: document.getElementById("fatalError"),
   summaryBox: document.getElementById("summaryBox"),
   summaryPostal: document.getElementById("summaryPostal"),
+  summarySlots: document.getElementById("summarySlots"),
   summaryPallets: document.getElementById("summaryPallets"),
   summaryTransport: document.getElementById("summaryTransport"),
   summaryCount: document.getElementById("summaryCount"),
@@ -26,6 +28,9 @@ const els = {
 
 document.addEventListener("DOMContentLoaded", () => {
   setupTransportToggle();
+  els.slots.addEventListener("input", syncDerivedFields);
+  syncDerivedFields();
+
   loadAllData().then(() => {
     state.initialized = true;
   }).catch((error) => {
@@ -43,18 +48,24 @@ function setupTransportToggle() {
         option.classList.toggle("active", option.querySelector("input").checked);
       });
 
-      const selected = getTransportType();
-      if (selected === "FTL") {
-        els.pallets.value = "34";
-        els.pallets.readOnly = true;
+      if (getTransportType() === "FTL") {
+        els.slots.value = "34";
+        els.slots.readOnly = true;
       } else {
-        els.pallets.readOnly = false;
-        if (!els.pallets.value || Number(els.pallets.value) === 34) {
-          els.pallets.value = "1";
+        els.slots.readOnly = false;
+        if (!els.slots.value || Number(els.slots.value) === 34) {
+          els.slots.value = "1";
         }
       }
+      syncDerivedFields();
     });
   });
+}
+
+function syncDerivedFields() {
+  const slots = Number(els.slots.value);
+  const pallets = calculatePalletsFromSlots(slots);
+  els.pallets.value = Number.isFinite(pallets) ? String(pallets) : "";
 }
 
 async function loadAllData() {
@@ -105,7 +116,6 @@ function splitCsvLine(line) {
   const result = [];
   let current = "";
   let inQuotes = false;
-
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
     if (char === '"') {
@@ -122,7 +132,6 @@ function splitCsvLine(line) {
       current += char;
     }
   }
-
   result.push(current);
   return result;
 }
@@ -134,7 +143,6 @@ function parseRatesCsv(text) {
       const match = key.match(/^Zone\s+(\d+)$/i);
       if (match) zonePrices[match[1]] = parseGermanNumber(row[key]);
     });
-
     return {
       forwarder: (row["Forwarder"] || "").trim(),
       originCountry: (row["Origin CTRY"] || "").trim(),
@@ -161,7 +169,8 @@ function parseZonesCsv(text) {
 function normalizeFloater(input) {
   const result = {};
   Object.entries(input || {}).forEach(([key, value]) => {
-    result[normalizeName(key)] = parseGermanNumber(value);
+    const parsed = parseGermanNumber(value);
+    result[normalizeName(key)] = parsed > 1 ? parsed / 100 : parsed;
   });
   return result;
 }
@@ -181,10 +190,7 @@ function normalizeAncillary(input) {
 
 function parseGermanNumber(value) {
   if (typeof value === "number") return value;
-  const normalized = String(value ?? "")
-    .trim()
-    .replace(/\./g, "")
-    .replace(",", ".");
+  const normalized = String(value ?? "").trim().replace(/\./g, "").replace(",", ".");
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : NaN;
 }
@@ -194,10 +200,7 @@ function normalizeName(value) {
 }
 
 function normalizePostalCode(value) {
-  return String(value || "")
-    .toUpperCase()
-    .replace(/\s+/g, "")
-    .replace(/[^A-Z0-9]/g, "");
+  return String(value || "").toUpperCase().replace(/\s+/g, "").replace(/[^A-Z0-9]/g, "");
 }
 
 function formatMoney(value) {
@@ -244,20 +247,16 @@ function onReset() {
     els.summaryBox.style.display = "none";
     els.resultsSection.style.display = "none";
     els.resultsBody.innerHTML = `<tr><td colspan="9" class="muted">Noch keine Berechnung.</td></tr>`;
-    els.transportInputs.forEach(input => {
-      input.checked = input.value === "Teilladung";
-    });
-    els.transportOptions.forEach(option => {
-      option.classList.toggle("active", option.querySelector("input").checked);
-    });
-    els.pallets.readOnly = false;
-    els.pallets.value = "1";
+    els.transportInputs.forEach(input => { input.checked = input.value === "Teilladung"; });
+    els.transportOptions.forEach(option => { option.classList.toggle("active", option.querySelector("input").checked); });
+    els.slots.readOnly = false;
+    els.slots.value = "1";
+    syncDerivedFields();
   }, 0);
 }
 
 async function onSubmit(event) {
   event.preventDefault();
-
   if (!state.initialized) {
     showMessage("danger", "Die Daten werden noch geladen. Bitte kurz erneut versuchen.");
     return;
@@ -268,19 +267,20 @@ async function onSubmit(event) {
 
   const postalCodeRaw = els.postalCode.value.trim();
   const postalCode = normalizePostalCode(postalCodeRaw);
-  const pallets = Number(els.pallets.value);
+  const slots = Number(els.slots.value);
+  const pallets = calculatePalletsFromSlots(slots);
   const transportType = getTransportType();
 
   if (!postalCode) {
     showMessage("danger", "Bitte eine PLZ eingeben.");
     return;
   }
-  if (!Number.isFinite(pallets) || pallets <= 0) {
-    showMessage("danger", "Bitte eine gültige Palettenanzahl eingeben.");
+  if (!Number.isFinite(slots) || slots <= 0) {
+    showMessage("danger", "Bitte eine gültige Stellplatzanzahl eingeben.");
     return;
   }
 
-  const calculations = calculateAll(postalCode, pallets);
+  const calculations = calculateAll(postalCode, slots, pallets);
   if (!calculations.results.length) {
     const zoneExistsAnywhere = state.zones.some(z => zoneMatchesPostal(z, postalCode));
     const reason = zoneExistsAnywhere
@@ -294,6 +294,7 @@ async function onSubmit(event) {
 
   renderSummary({
     postalCode: postalCodeRaw,
+    slots,
     pallets,
     transportType,
     resultCount: calculations.results.length,
@@ -301,13 +302,10 @@ async function onSubmit(event) {
   });
 
   renderResults(calculations.results);
-  showMessage(
-    "success",
-    `Berechnung erfolgreich. ${calculations.results.length} Dienstleister gefunden, ${calculations.missingCount} ohne Ergebnis.`
-  );
+  showMessage("success", `Berechnung erfolgreich. ${calculations.results.length} Dienstleister gefunden, ${calculations.missingCount} ohne Ergebnis.`);
 }
 
-function calculateAll(postalCode, pallets) {
+function calculateAll(postalCode, slots, pallets) {
   const allForwarders = [...new Set(state.rates.map(row => row.forwarder))];
   const results = [];
   let missingCount = 0;
@@ -321,8 +319,8 @@ function calculateAll(postalCode, pallets) {
 
     const matchingRates = state.rates.filter((row) =>
       normalizeName(row.forwarder) === normalizeName(forwarder) &&
-      pallets >= row.chgFrom &&
-      pallets <= row.chgTo
+      slots >= row.chgFrom &&
+      slots <= row.chgTo
     );
 
     if (!matchingRates.length) {
@@ -330,19 +328,17 @@ function calculateAll(postalCode, pallets) {
       return;
     }
 
-    const zonePriceColumn = zoneInfo.zone;
     const viable = [];
-
     matchingRates.forEach((rate) => {
-      const rawZonePrice = rate.zonePrices[zonePriceColumn];
+      const rawZonePrice = rate.zonePrices[zoneInfo.zone];
       if (!Number.isFinite(rawZonePrice) || rawZonePrice >= 90000) return;
 
       let basePrice = rawZonePrice;
       let pricingReason = rate.unit || "Tarif";
 
       if (rate.unit === "PLL") {
-        basePrice = rawZonePrice * pallets;
-        pricingReason = "PLL × Paletten";
+        basePrice = rawZonePrice * slots;
+        pricingReason = "PLL × Stellplätze";
       } else if (rate.unit === "SHP") {
         basePrice = rawZonePrice;
         pricingReason = "SHP";
@@ -382,10 +378,14 @@ function calculateAll(postalCode, pallets) {
 function calculateAncillary(forwarder, pallets) {
   const entry = state.ancillary[normalizeName(forwarder)];
   if (!entry || entry.enabled === false) return 0;
-
   if (entry.mode === "fixed") return entry.value;
   if (entry.mode === "per_psp" || entry.mode === "per_palette") return entry.value * pallets;
   return 0;
+}
+
+function calculatePalletsFromSlots(slots) {
+  if (!Number.isFinite(slots) || slots <= 0) return NaN;
+  return Math.ceil(slots);
 }
 
 function formatBand(value) {
@@ -399,7 +399,6 @@ function findZoneForForwarder(forwarder, postalCode) {
     zoneMatchesPostal(row, postalCode)
   );
   if (specific) return specific;
-
   return state.zones.find((row) =>
     normalizeName(row.forwarder) === "all" &&
     zoneMatchesPostal(row, postalCode)
@@ -410,22 +409,20 @@ function zoneMatchesPostal(zoneRow, postalCode) {
   const input = normalizePostalCode(postalCode);
   const from = normalizePostalCode(zoneRow.destFromRaw);
   const to = normalizePostalCode(zoneRow.destToRaw);
-
   if (!input || !from || !to) return false;
 
   const inputNum = Number(input);
   const fromNum = Number(from);
   const toNum = Number(to);
-
   if ([inputNum, fromNum, toNum].every(Number.isFinite)) {
     return inputNum >= fromNum && inputNum <= toNum;
   }
-
   return input >= from && input <= to;
 }
 
-function renderSummary({ postalCode, pallets, transportType, resultCount, best }) {
+function renderSummary({ postalCode, slots, pallets, transportType, resultCount, best }) {
   els.summaryPostal.textContent = postalCode;
+  els.summarySlots.textContent = new Intl.NumberFormat("de-DE").format(slots);
   els.summaryPallets.textContent = new Intl.NumberFormat("de-DE").format(pallets);
   els.summaryTransport.textContent = transportType;
   els.summaryCount.textContent = new Intl.NumberFormat("de-DE").format(resultCount);
@@ -436,7 +433,6 @@ function renderSummary({ postalCode, pallets, transportType, resultCount, best }
 function renderResults(results) {
   els.resultsSection.style.display = "block";
   els.resultsBody.innerHTML = "";
-
   results.forEach((row, index) => {
     const tr = document.createElement("tr");
     if (index === 0) tr.className = "best-row";

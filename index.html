@@ -24,8 +24,13 @@
           </div>
 
           <div class="field">
+            <label for="slots">Stellplätze</label>
+            <input id="slots" type="number" min="1" step="1" value="1" />
+          </div>
+
+          <div class="field">
             <label for="pallets">Paletten</label>
-            <input id="pallets" type="number" min="1" step="1" value="1" />
+            <input id="pallets" type="number" value="1" readonly />
           </div>
 
           <fieldset class="transport-field">
@@ -53,6 +58,7 @@
         <section id="summaryBox" class="summary-box" style="display:none;">
           <div class="summary-left">
             <div class="summary-row"><strong>PLZ:</strong> <span id="summaryPostal">—</span></div>
+            <div class="summary-row"><strong>Stellplätze:</strong> <span id="summarySlots">—</span></div>
             <div class="summary-row"><strong>Paletten:</strong> <span id="summaryPallets">—</span></div>
             <div class="summary-row"><strong>Transportart:</strong> <span id="summaryTransport">—</span></div>
             <div class="summary-row"><strong>Dienstleister mit Ergebnis:</strong> <span id="summaryCount">—</span></div>

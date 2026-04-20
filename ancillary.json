@@ -7,7 +7,7 @@
   "Hellmann": {
     "enabled": true,
     "mode": "per_psp",
-    "value": 1
+    "value": 0
   },
   "Mordhorst": {
     "enabled": true,
