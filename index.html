@@ -32,20 +32,25 @@
             <label for="pallets">Paletten</label>
             <input id="pallets" type="number" min="1" step="1" value="1" />
           </div>
+        </div>
 
-          <fieldset class="transport-field">
-            <legend>Transportart</legend>
-            <div class="transport-switch">
-              <label class="transport-option active" data-transport="teil">
-                <input type="radio" name="transportType" value="Teilladung" checked />
-                <span>Teilladung</span>
-              </label>
-              <label class="transport-option" data-transport="ftl">
-                <input type="radio" name="transportType" value="FTL" />
-                <span>FTL</span>
-              </label>
-            </div>
-          </fieldset>
+        <div class="form-grid form-grid-bottom">
+          <div class="field field-wide">
+            <label for="bookingWindow">Zeitfenster Buchung</label>
+            <input id="bookingWindow" type="text" placeholder="Freitext Eingabe" />
+          </div>
+
+          <div class="field">
+            <label for="bookingDate">Termin</label>
+            <input id="bookingDate" type="date" />
+          </div>
+        </div>
+
+        <div class="form-grid form-grid-notes">
+          <div class="field field-wide">
+            <label for="freeTextNote">Freitext</label>
+            <input id="freeTextNote" type="text" placeholder="z. B. H1-Palette ohne Tausch" />
+          </div>
         </div>
 
         <div class="form-actions">
@@ -58,7 +63,9 @@
             <div class="summary-row"><strong>PLZ:</strong> <span id="summaryPostal">—</span></div>
             <div class="summary-row"><strong>Stellplätze:</strong> <span id="summarySlots">—</span></div>
             <div class="summary-row"><strong>Paletten:</strong> <span id="summaryPallets">—</span></div>
-            <div class="summary-row"><strong>Transportart:</strong> <span id="summaryTransport">—</span></div>
+            <div class="summary-row"><strong>Zeitfenster Buchung:</strong> <span id="summaryBookingWindow">—</span></div>
+            <div class="summary-row"><strong>Termin:</strong> <span id="summaryBookingDate">—</span></div>
+            <div class="summary-row"><strong>Freitext:</strong> <span id="summaryFreeTextNote">—</span></div>
             <div class="summary-row"><strong>Dienstleister mit Ergebnis:</strong> <span id="summaryCount">—</span></div>
           </div>
           <div class="summary-right">
@@ -85,11 +92,12 @@
               <th class="right">Floater (€)</th>
               <th class="right">Palettentausch (€)</th>
               <th class="right">Preis (€)</th>
+              <th>E-Mail</th>
             </tr>
           </thead>
           <tbody id="resultsBody">
             <tr>
-              <td colspan="7" class="muted">Noch keine Berechnung.</td>
+              <td colspan="8" class="muted">Noch keine Berechnung.</td>
             </tr>
           </tbody>
         </table>
