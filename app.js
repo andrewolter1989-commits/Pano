@@ -99,6 +99,7 @@ async function onSubmit(event) {
     });
 
     const data = await response.json();
+renderRecipientSelection(data.empfaengerMatches || []);
 
     if (!data.ok) throw new Error(data.error);
 
@@ -130,3 +131,44 @@ function renderResults(results) {
     els.resultsBody.appendChild(tr);
   });
 }
+function renderRecipientSelection(matches) {
+  const select = document.getElementById("recipientSelect");
+  const manualBox = document.getElementById("manualRecipientBox");
+
+  select.innerHTML = "";
+
+  if (!matches.length) {
+    select.innerHTML = `<option value="manual">+ Neuer Empfänger</option>`;
+    manualBox.style.display = "block";
+    return;
+  }
+
+  if (matches.length === 1) {
+    const r = matches[0];
+    select.innerHTML = `
+      <option value="${r.id}">
+        ${r.name1} – ${r.strasse} – ${r.plz} ${r.stadt}
+      </option>
+      <option value="manual">+ Neuer Empfänger</option>
+    `;
+    manualBox.style.display = "none";
+    return;
+  }
+
+  select.innerHTML = `
+    <option value="">Bitte auswählen</option>
+    ${matches.map(r => `
+      <option value="${r.id}">
+        ${r.name1} – ${r.strasse} – ${r.plz} ${r.stadt}
+      </option>
+    `).join("")}
+    <option value="manual">+ Neuer Empfänger</option>
+  `;
+
+  manualBox.style.display = "none";
+}
+
+document.getElementById("recipientSelect").addEventListener("change", (e) => {
+  document.getElementById("manualRecipientBox").style.display =
+    e.target.value === "manual" ? "block" : "none";
+});

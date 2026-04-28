@@ -20,8 +20,17 @@
         <div class="form-grid form-grid-top">
           <div class="field">
             <label for="postalCode">PLZ Empfänger</label>
-            <input id="postalCode" type="text" inputmode="text" placeholder="z. B. 27777" />
+            <input id="postalCode" type="text" inputmode="text" placeholder="z.B. 27777" />
           </div>
+<label>Entladestelle</label>
+<select id="recipientSelect"></select>
+
+<div id="manualRecipientBox" style="display:none;">
+  <input id="recipientName" placeholder="Name">
+  <input id="recipientStreet" placeholder="Straße">
+  <input id="recipientCity" placeholder="Stadt">
+  <input id="recipientCountry" placeholder="Land">
+</div>
 
           <div class="field">
             <label for="slots">Stellplätze</label>
@@ -40,11 +49,15 @@
             <input id="bookingWindow" type="text" placeholder="Freitext Eingabe" />
           </div>
 
-          <div class="field">
-            <label for="bookingDate">Termin</label>
-            <input id="bookingDate" type="date" />
-          </div>
-        </div>
+<div class="field">
+  <label for="pickupDate">Abholdatum</label>
+  <input id="pickupDate" type="date" />
+</div>
+
+<div class="field">
+  <label for="deliveryDate">Liefertermin</label>
+  <input id="deliveryDate" type="date" />
+</div>
 
         <div class="form-grid form-grid-notes">
           <div class="field field-wide">
