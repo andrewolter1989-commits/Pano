@@ -1,4 +1,5 @@
 const API_URL = "https://project-h2k76.vercel.app/api/calculate";
+const RECIPIENTS_URL = "https://project-h2k76.vercel.app/api/recipients";
 
 const state = {
   initialized: false,
@@ -47,6 +48,8 @@ const els = {
 document.addEventListener("DOMContentLoaded", () => {
   els.slots.addEventListener("input", syncDerivedFieldsFromSlots);
   els.recipientSelect.addEventListener("change", onRecipientSelectChange);
+els.postalCode.addEventListener("blur", loadRecipientsForPostalCode);
+els.postalCode.addEventListener("change", loadRecipientsForPostalCode);
 
   syncDerivedFieldsFromSlots();
   state.initialized = true;
@@ -458,4 +461,47 @@ function escapeJs(value) {
   return String(value ?? "")
     .replace(/\\/g, "\\\\")
     .replace(/'/g, "\\'");
+}
+function renderRecipientDropdown(list) {
+  els.recipientSelect.innerHTML = "";
+
+  if (!list.length) {
+    els.recipientSelect.innerHTML = `<option value="manual">+ Neuer Empfänger</option>`;
+    return;
+  }
+
+  list.forEach((r, index) => {
+    const option = document.createElement("option");
+
+    option.value = index;
+    option.textContent =
+      `${r.name} – ${r.strasse} – ${r.plz} ${r.stadt} (${r.land})`;
+
+    option.dataset.data = JSON.stringify(r);
+
+    els.recipientSelect.appendChild(option);
+  });
+
+  const manual = document.createElement("option");
+  manual.value = "manual";
+  manual.textContent = "+ Neuer Empfänger";
+
+  els.recipientSelect.appendChild(manual);
+}
+async function loadRecipientsForPostalCode() {
+  const postalCode = normalizePostalCode(els.postalCode.value);
+
+  if (!postalCode) return;
+
+  try {
+    const response = await fetch(`${RECIPIENTS_URL}?postalCode=${postalCode}`);
+    const data = await response.json();
+
+    if (!data.ok) throw new Error(data.error);
+
+    renderRecipientDropdown(data.empfaengerMatches);
+
+  } catch (err) {
+    showFatal("Fehler beim Laden der Entladestellen");
+  }
 }
