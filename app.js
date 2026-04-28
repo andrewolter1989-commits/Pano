@@ -85,6 +85,10 @@ async function onSubmit(event) {
     showFatal("Bitte eine PLZ eingeben.");
     return;
   }
+if (!els.recipientSelect.value) {
+  showFatal("Bitte Entladestelle auswählen oder '+ Neuer Empfänger' wählen.");
+  return;
+}
 
   if (!Number.isFinite(slots) || slots <= 0) {
     showFatal("Bitte gültige Stellplätze eingeben.");
@@ -168,14 +172,54 @@ async function onSubmit(event) {
 }
 
 function renderRecipientSelection(matches) {
+  const previousValue = els.recipientSelect.value;
+
   state.lastRecipientMatches = matches;
   state.recipientsById = {};
   els.recipientSelect.innerHTML = "";
 
-  matches.forEach((recipient) => {
-    state.recipientsById[String(recipient.id)] = recipient;
+  matches.forEach((recipient, index) => {
+    const id = String(
+      recipient.id ||
+      `${recipient.plz || ""}-${recipient.strasse || ""}-${index}`
+    );
+
+    recipient.id = id;
+    state.recipientsById[id] = recipient;
   });
 
+  if (!matches.length) {
+    els.recipientSelect.innerHTML = `<option value="manual">+ Neuer Empfänger</option>`;
+    els.recipientSelect.value = "manual";
+    els.manualRecipientBox.style.display = "grid";
+    return;
+  }
+
+  if (matches.length === 1) {
+    const r = matches[0];
+    els.recipientSelect.innerHTML = `
+      <option value="${escapeHtml(r.id)}" selected>${escapeHtml(formatRecipientOption(r))}</option>
+      <option value="manual">+ Neuer Empfänger</option>
+    `;
+    els.manualRecipientBox.style.display = "none";
+    return;
+  }
+
+  els.recipientSelect.innerHTML = `
+    <option value="">Bitte Entladestelle auswählen</option>
+    ${matches.map(r => `
+      <option value="${escapeHtml(r.id)}">${escapeHtml(formatRecipientOption(r))}</option>
+    `).join("")}
+    <option value="manual">+ Neuer Empfänger</option>
+  `;
+
+  if (previousValue && state.recipientsById[previousValue]) {
+    els.recipientSelect.value = previousValue;
+  }
+
+  els.manualRecipientBox.style.display =
+    els.recipientSelect.value === "manual" ? "grid" : "none";
+}
   if (!matches.length) {
     els.recipientSelect.innerHTML = `<option value="manual">+ Neuer Empfänger</option>`;
     els.recipientSelect.value = "manual";
@@ -474,7 +518,6 @@ async function loadRecipientsForPostalCode() {
       throw new Error(data.error || "Entladestellen konnten nicht geladen werden.");
     }
 
-    renderRecipientSelection(data.empfaengerMatches || []);
   } catch (error) {
     showFatal(`Entladestellen konnten nicht geladen werden: ${error.message}`);
   }
