@@ -1,36 +1,28 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pano Preisrechner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PANO Preisrechner</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <main class="app-shell">
-    <header class="hero-header">
-      <p class="eyebrow">Pano</p>
+  <main class="page">
+    <header class="hero">
+      <div class="brand">PANO</div>
       <h1>Preisrechner</h1>
     </header>
 
-    <div id="fatalError" class="notice danger"></div>
+    <div id="fatalError" class="notice danger" style="display:none;"></div>
+    <div id="successNotice" class="notice success" style="display:none;"></div>
 
     <section class="card calculator-shell">
       <form id="calculatorForm" class="calculator-form">
         <div class="form-grid form-grid-top">
           <div class="field">
             <label for="postalCode">PLZ Empfänger</label>
-            <input id="postalCode" type="text" inputmode="text" placeholder="z.B. 27777" />
+            <input id="postalCode" type="text" inputmode="text" placeholder="z. B. 27777" />
           </div>
-<label>Entladestelle</label>
-<select id="recipientSelect"></select>
-
-<div id="manualRecipientBox" style="display:none;">
-  <input id="recipientName" placeholder="Name">
-  <input id="recipientStreet" placeholder="Straße">
-  <input id="recipientCity" placeholder="Stadt">
-  <input id="recipientCountry" placeholder="Land">
-</div>
 
           <div class="field">
             <label for="slots">Stellplätze</label>
@@ -45,72 +37,123 @@
 
         <div class="form-grid form-grid-bottom">
           <div class="field field-wide">
+            <label for="recipientSelect">Entladestelle</label>
+            <select id="recipientSelect">
+              <option value="">Bitte zuerst berechnen</option>
+            </select>
+          </div>
+
+          <div id="manualRecipientBox" class="manual-recipient" style="display:none;">
+            <div class="field">
+              <label for="recipientName">Name</label>
+              <input id="recipientName" type="text" placeholder="Name Empfänger" />
+            </div>
+
+            <div class="field">
+              <label for="recipientStreet">Straße</label>
+              <input id="recipientStreet" type="text" placeholder="Straße" />
+            </div>
+
+            <div class="field">
+              <label for="recipientCity">Stadt</label>
+              <input id="recipientCity" type="text" placeholder="Stadt" />
+            </div>
+
+            <div class="field">
+              <label for="recipientCountry">Land</label>
+              <input id="recipientCountry" type="text" placeholder="DE" maxlength="2" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-grid form-grid-bottom">
+          <div class="field field-wide">
             <label for="bookingWindow">Zeitfenster Buchung</label>
             <input id="bookingWindow" type="text" placeholder="Freitext Eingabe" />
           </div>
 
-<div class="field">
-  <label for="pickupDate">Abholdatum</label>
-  <input id="pickupDate" type="date" />
-</div>
+          <div class="field">
+            <label for="pickupDate">Abholdatum</label>
+            <input id="pickupDate" type="date" />
+          </div>
 
-<div class="field">
-  <label for="deliveryDate">Liefertermin</label>
-  <input id="deliveryDate" type="date" />
-</div>
+          <div class="field">
+            <label for="deliveryDate">Liefertermin</label>
+            <input id="deliveryDate" type="date" />
+          </div>
+        </div>
 
         <div class="form-grid form-grid-notes">
-          <div class="field field-wide">
+          <div class="field field-full">
             <label for="freeTextNote">Freitext</label>
             <input id="freeTextNote" type="text" placeholder="z. B. H1-Palette ohne Tausch" />
           </div>
         </div>
 
         <div class="form-actions">
-          <button class="primary" type="submit">Berechnen</button>
-          <button class="secondary" type="reset">Zurücksetzen</button>
+          <button type="submit">Berechnen</button>
+          <button type="reset" class="secondary">Zurücksetzen</button>
         </div>
-
-        <section id="summaryBox" class="summary-box" style="display:none;">
-          <div class="summary-left">
-            <div class="summary-row"><strong>PLZ:</strong> <span id="summaryPostal">—</span></div>
-            <div class="summary-row"><strong>Stellplätze:</strong> <span id="summarySlots">—</span></div>
-            <div class="summary-row"><strong>Paletten:</strong> <span id="summaryPallets">—</span></div>
-            <div class="summary-row"><strong>Zeitfenster Buchung:</strong> <span id="summaryBookingWindow">—</span></div>
-            <div class="summary-row"><strong>Termin:</strong> <span id="summaryBookingDate">—</span></div>
-            <div class="summary-row"><strong>Freitext:</strong> <span id="summaryFreeTextNote">—</span></div>
-            <div class="summary-row"><strong>Dienstleister mit Ergebnis:</strong> <span id="summaryCount">—</span></div>
-          </div>
-          <div class="summary-right">
-            <div class="summary-best-label">Günstigster Anbieter</div>
-            <div class="summary-best" id="summaryBest">—</div>
-          </div>
-        </section>
       </form>
     </section>
 
-    <section id="resultsSection" class="card results-shell" style="display:none;">
-      <div class="results-head">
-        <h2>Preise aller Dienstleister</h2>
+    <section id="summaryBox" class="summary-box" style="display:none;">
+      <div>
+        <strong>PLZ:</strong> <span id="summaryPostal">—</span>
       </div>
+      <div>
+        <strong>Land:</strong> <span id="summaryCountry">—</span>
+      </div>
+      <div>
+        <strong>Stellplätze:</strong> <span id="summarySlots">—</span>
+      </div>
+      <div>
+        <strong>Paletten:</strong> <span id="summaryPallets">—</span>
+      </div>
+      <div>
+        <strong>Abholdatum:</strong> <span id="summaryPickupDate">—</span>
+      </div>
+      <div>
+        <strong>Liefertermin:</strong> <span id="summaryDeliveryDate">—</span>
+      </div>
+      <div>
+        <strong>Zeitfenster:</strong> <span id="summaryBookingWindow">—</span>
+      </div>
+      <div>
+        <strong>Freitext:</strong> <span id="summaryFreeTextNote">—</span>
+      </div>
+      <div class="summary-wide">
+        <strong>Entladestelle:</strong> <span id="summaryRecipient">—</span>
+      </div>
+      <div>
+        <strong>Dienstleister mit Ergebnis:</strong> <span id="summaryCount">—</span>
+      </div>
+      <div class="summary-best">
+        <strong>Günstigster Anbieter</strong>
+        <span id="summaryBest">—</span>
+      </div>
+    </section>
+
+    <section id="resultsSection" class="card results-card" style="display:none;">
+      <h2>Preise aller Dienstleister</h2>
+      <p class="muted">Sortiert nach Gesamtpreis. Leere Preise oder nicht angebotene Zonen werden automatisch nicht angezeigt.</p>
 
       <div class="table-wrap">
-        <table class="price-table">
+        <table>
           <thead>
             <tr>
               <th>Dienstleister</th>
-              <th>Zone</th>
               <th class="right">Basis (€)</th>
               <th class="right">Floater (%)</th>
               <th class="right">Floater (€)</th>
-              <th class="right">Palettentausch (€)</th>
               <th class="right">Preis (€)</th>
-              <th>E-Mail</th>
+              <th>Anfrage</th>
+              <th>Buchung</th>
             </tr>
           </thead>
           <tbody id="resultsBody">
             <tr>
-              <td colspan="8" class="muted">Noch keine Berechnung.</td>
+              <td colspan="7" class="muted">Noch keine Berechnung.</td>
             </tr>
           </tbody>
         </table>
