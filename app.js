@@ -46,10 +46,9 @@ const els = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-  els.slots.addEventListener("input", syncDerivedFieldsFromSlots);
-  els.recipientSelect.addEventListener("change", onRecipientSelectChange);
 els.postalCode.addEventListener("blur", loadRecipientsForPostalCode);
 els.postalCode.addEventListener("change", loadRecipientsForPostalCode);
+els.recipientSelect.addEventListener("change", onRecipientSelectChange);
 
   syncDerivedFieldsFromSlots();
   state.initialized = true;
@@ -433,7 +432,7 @@ function onReset() {
     els.summaryBox.style.display = "none";
     els.resultsSection.style.display = "none";
     els.resultsBody.innerHTML = `<tr><td colspan="7" class="muted">Noch keine Berechnung.</td></tr>`;
-    els.recipientSelect.innerHTML = `<option value="">Bitte zuerst berechnen</option>`;
+    els.recipientSelect.innerHTML = `<option value="">Bitte PLZ eingeben</option>`;
     els.manualRecipientBox.style.display = "none";
     els.slots.value = "1";
     els.pallets.value = "1";
@@ -462,46 +461,21 @@ function escapeJs(value) {
     .replace(/\\/g, "\\\\")
     .replace(/'/g, "\\'");
 }
-function renderRecipientDropdown(list) {
-  els.recipientSelect.innerHTML = "";
-
-  if (!list.length) {
-    els.recipientSelect.innerHTML = `<option value="manual">+ Neuer Empfänger</option>`;
-    return;
-  }
-
-  list.forEach((r, index) => {
-    const option = document.createElement("option");
-
-    option.value = index;
-    option.textContent =
-      `${r.name} – ${r.strasse} – ${r.plz} ${r.stadt} (${r.land})`;
-
-    option.dataset.data = JSON.stringify(r);
-
-    els.recipientSelect.appendChild(option);
-  });
-
-  const manual = document.createElement("option");
-  manual.value = "manual";
-  manual.textContent = "+ Neuer Empfänger";
-
-  els.recipientSelect.appendChild(manual);
-}
 async function loadRecipientsForPostalCode() {
   const postalCode = normalizePostalCode(els.postalCode.value);
 
   if (!postalCode) return;
 
   try {
-    const response = await fetch(`${RECIPIENTS_URL}?postalCode=${postalCode}`);
+    const response = await fetch(`${RECIPIENTS_URL}?postalCode=${encodeURIComponent(postalCode)}`);
     const data = await response.json();
 
-    if (!data.ok) throw new Error(data.error);
+    if (!response.ok || !data.ok) {
+      throw new Error(data.error || "Entladestellen konnten nicht geladen werden.");
+    }
 
-    renderRecipientDropdown(data.empfaengerMatches);
-
-  } catch (err) {
-    showFatal("Fehler beim Laden der Entladestellen");
+    renderRecipientSelection(data.empfaengerMatches || []);
+  } catch (error) {
+    showFatal(`Entladestellen konnten nicht geladen werden: ${error.message}`);
   }
 }
